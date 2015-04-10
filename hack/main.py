@@ -13,9 +13,18 @@ import time
 
 from Leap import CircleGesture, KeyTapGesture, ScreenTapGesture, SwipeGesture, Vector
 
+import pyaudio  
+import wave  
+
+#define stream chunk
+chunk = 1024
+
 x_chord_line_left = -50
 x_chord_line_right = 50
 y_strumming_line = 200
+
+#instantiate PyAudio
+p = pyaudio.PyAudio()
 
 
 class SampleListener(Leap.Listener):
@@ -42,10 +51,25 @@ class SampleListener(Leap.Listener):
                 file_path = "d.wav"
             else:
                 file_path = "e.wav"
-            # print "Force: %s" % right_hand.palm_velocity.y
-            music = pyglet.resource.media(file_path)
-            music.play()
-            pyglet.app.run()
+            
+            f = wave.open(file_path,"rb")
+            
+            #open stream  
+            stream = p.open(format = p.get_format_from_width(f.getsampwidth()),
+                            channels = f.getnchannels(),  
+                            rate = f.getframerate(),  
+                            output = True)  
+            #read data
+            data = f.readframes(chunk)
+
+            #paly stream
+            while data != '':
+                stream.write(data)
+                data = f.readframes(chunk)
+
+            #stop stream
+            stream.stop_stream()
+            stream.close()
 
         # print "Tone : %s" % pitch
         # print "Frame available"
@@ -64,6 +88,6 @@ def main():
         sys.stdin.readline()
     except KeyboardInterrupt:
         pass
-
+    p.terminate()
 if __name__ == "__main__":
 	main()
